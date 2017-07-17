@@ -1,0 +1,12 @@
+Uuid: 29fb77b2611d4c27a9a0b8bc504d8ca2
+ExtensionType: 2
+Name: multi-browser-highlighting
+RepoName: multi-browser-highlighting
+ScreenVersion: 1.0
+SerialVersion: 1
+MinPlatformVersion: 0
+ProOnly: False
+Author: Emmanuel Law
+ShortDescription: Highlight the Proxy history to differentiate requests made by different browsers
+EntryPoint: multi-browser.py
+BuildCommand: 
