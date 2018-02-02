@@ -24,7 +24,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		# Keep Track of Browsers
 		self._browser={}
 		# Colors for different browsers
-		self.colors=["red", "pink", "green","magenta","cyan", "gray", "yellow"]
+		self.colors=["red", "blue", "pink", "green", "magenta", "cyan", "gray", "yellow"]
  
 		
 		self._callbacks.setExtensionName("Multi-Browser Highlighting")
@@ -38,15 +38,21 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 	def processProxyMessage(self, messageIsRequest, message):
 		if self.isEnabled == False:
 			return
-		#	self._stdout.println(("Proxy request to " if messageIsRequest else "Proxy response from ") + message.getMessageInfo().getHttpService().toString())
 		if messageIsRequest == False:
 			return
 		browser_agent=None
 		headers=self._helpers.analyzeRequest(message.getMessageInfo()).getHeaders()
+
 		for x in headers:
+			# if a color header is defined just set the color
+			if x.lower().startswith("color:"):
+				color=x.lower()[6:].strip()
+				if color in self.colors:
+					message.getMessageInfo().setHighlight(color)
+					return
+			# otherwise, use the user-agent
 			if x.lower().startswith("user-agent:"):
 				browser_agent=x
-				break
 
 		if browser_agent not in self._browser:
 			self._browser[browser_agent]={"id":len(self._browser)+1, "agent":browser_agent, "color":self.colors.pop()}
