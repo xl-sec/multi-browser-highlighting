@@ -2,17 +2,17 @@
 # Version:	1.0
 # License: 	MIT License
 
-
 from burp import IBurpExtender
-from burp import IHttpListener	
+from burp import IHttpListener
 from burp import IProxyListener
 from burp import IInterceptedProxyMessage
 from burp import IContextMenuFactory
 
-
 from javax.swing import JMenuItem
 from java.awt.event import ActionListener
 from java.io import PrintWriter
+import re
+
 class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListener):
 	def registerExtenderCallbacks( self, callbacks):
 		# keep a reference to our callbacks and helper object
@@ -25,11 +25,10 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		self._browser={}
 		# Colors for different browsers
 		self.colors=["red", "blue", "pink", "green", "magenta", "cyan", "gray", "yellow"]
- 
-		
+
 		self._callbacks.setExtensionName("Multi-Browser Highlighting")
 		self.isEnabled=False
-		
+
 		#IExtensionHelpers helpers = callbacks.getHelpers()
 		callbacks.registerProxyListener(self)
 		callbacks.registerContextMenuFactory(self)
@@ -48,10 +47,19 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 			if x.lower().startswith("color:"):
 				color=x.lower()[6:].strip()
 				if color in self.colors:
-					message.getMessageInfo().setHighlight(color)
-					return
+                                    message.getMessageInfo().setHighlight(color)
+                                    return
+                        # check for autochrome UA
+			elif x.lower().startswith("user-agent:") and 'autochrome' in x.lower():
+                            m = re.search(r'autochrome/([a-z]+)', x.lower())
+                            if m and m.group(1):
+                                color = m.group(1)
+				if color in self.colors:
+                                    message.getMessageInfo().setHighlight(color)
+                                    return
+
 			# otherwise, use the user-agent
-			if x.lower().startswith("user-agent:"):
+			elif x.lower().startswith("user-agent:"):
 				browser_agent=x
 
 		if browser_agent not in self._browser:
@@ -76,5 +84,5 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 			return None
 	def actionPerformed(self, actionEvent):
 		self.isEnabled= not self.isEnabled
-		
+
 
