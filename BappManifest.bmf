@@ -2,8 +2,8 @@ Uuid: 29fb77b2611d4c27a9a0b8bc504d8ca2
 ExtensionType: 2
 Name: Multi-Browser Highlighting
 RepoName: multi-browser-highlighting
-ScreenVersion: 1.1
-SerialVersion: 2
+ScreenVersion: 1.2
+SerialVersion: 3
 MinPlatformVersion: 0
 ProOnly: False
 Author: Emmanuel Law
