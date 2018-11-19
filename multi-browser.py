@@ -47,37 +47,41 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		if not messageIsRequest:
 			return
 		
-		browser_agent = None
+		set_color = None
 		headers = self.helpers.analyzeRequest(message.getMessageInfo()).getHeaders()
 
-		for x in headers:
+		for h in headers:
+			h = h.lower()
 			# If a color header is defined just set the color
-			if x.lower().startswith("color:"):
-				color = x.lower()[6:].strip()
+			if h.startswith("color:"):
+				color = h[6:].strip()
 				if color in self.colors:
-					message.getMessageInfo().setHighlight(color)
-					return
+					set_color = color
+					break
 			# Check for autochrome UA
-			elif x.lower().startswith("user-agent:") and 'autochrome' in x.lower():
-				m = re.search(r'autochrome/([a-z]+)', x.lower())
+			elif h.startswith("user-agent:") and 'autochrome' in h:
+				m = re.search(r'autochrome/([a-z]+)', h)
 				if m and m.group(1):
 					color = m.group(1)
-				if color in self.colors:
-					message.getMessageInfo().setHighlight(color)
-					return
+					if color in self.colors:
+						set_color = color
 			# Otherwise, use the user-agent
-			elif x.lower().startswith("user-agent:"):
-				browser_agent = x
+			elif h.startswith("user-agent:"):
+				browser_agent = h[11:].strip()
+				if browser_agent not in self.browsers:
+					self.browsers[browser_agent] = {
+						"id": len(self.browsers) + 1,
+						"agent": browser_agent,
+						"color": self.colors[len(self.browsers) % len(self.colors)]
+					}
+					self.stdout.println("Found new browser:")
+					self.stdout.println("  ID: " + str(self.browsers[browser_agent]["id"]))
+					self.stdout.println("  Agent: " + self.browsers[browser_agent]["agent"])
+					self.stdout.println("  Color: " + self.browsers[browser_agent]["color"])
+				set_color = self.browsers[browser_agent]["color"]
 
-		if browser_agent not in self.browsers:
-			self.browsers[browser_agent] = {
-				"id": len(self.browsers) + 1,
-				"agent": browser_agent,
-				"color": self.colors.pop()
-			}
-
-		self.stdout.println(self.browsers[browser_agent]["agent"])
-		message.getMessageInfo().setHighlight(self.browsers[browser_agent]["color"])
+		if not set_color is None:
+			message.getMessageInfo().setHighlight(set_color)
 
 	def createMenuItems(self, invocation):
 		if invocation.getInvocationContext() == invocation.CONTEXT_PROXY_HISTORY:
