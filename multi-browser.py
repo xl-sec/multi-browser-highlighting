@@ -28,6 +28,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 
 		self.callbacks.setExtensionName("Multi-Browser Highlighting")
 		self.enabled = False
+		self.automagically = False
 
 		self.stdout.println("Multi-Browser Highlighting is loaded")
 		if self.enabled:
@@ -48,40 +49,54 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 			return
 		
 		set_color = None
+		set_comment = None
 		headers = self.helpers.analyzeRequest(message.getMessageInfo()).getHeaders()
 
 		for h in headers:
-			h = h.lower()
-			# If a color header is defined just set the color
-			if h.startswith("color:"):
-				color = h[6:].strip()
+			x = h.lower()
+			# First check if we have the combined color and comment header
+			if x.startswith("x-pentest:"):
+				if ";" in x:
+					color = x.split(":")[1].split(";")[0].strip()
+					set_comment = x.split(":")[1].split(";")[1].strip()
+				else:
+					color = x.split(":")[1].strip()
 				if color in self.colors:
 					set_color = color
-					break
-			# Check for autochrome UA
-			elif h.startswith("user-agent:") and 'autochrome' in h:
-				m = re.search(r'autochrome/([a-z]+)', h)
-				if m and m.group(1):
-					color = m.group(1)
-					if color in self.colors:
-						set_color = color
-			# Otherwise, use the user-agent
-			elif h.startswith("user-agent:"):
-				browser_agent = h[11:].strip()
-				if browser_agent not in self.browsers:
-					self.browsers[browser_agent] = {
-						"id": len(self.browsers) + 1,
-						"agent": browser_agent,
-						"color": self.colors[len(self.browsers) % len(self.colors)]
-					}
-					self.stdout.println("Found new browser:")
-					self.stdout.println("  ID: " + str(self.browsers[browser_agent]["id"]))
-					self.stdout.println("  Agent: " + self.browsers[browser_agent]["agent"])
-					self.stdout.println("  Color: " + self.browsers[browser_agent]["color"])
-				set_color = self.browsers[browser_agent]["color"]
+			# If a color header is defined just set the color
+			elif x.startswith("color:") or x.startswith("x-pentest-color:"):
+				color = x.split(":")[1].strip()
+				if color in self.colors:
+					set_color = color
+			# If a comment header is defined just set the comment
+			elif x.startswith("comment:") or x.startswith("x-pentest-comment:"):
+				set_comment = x.split(":")[1].strip()
+			elif self.automagically and set_comment is None and x.startswith("user-agent:"):
+				# Check for autochrome UA
+				if 'autochrome' in x:
+					m = re.search(r'autochrome/([a-z]+)', x)
+					if m and m.group(1):
+						if m.group(1) in self.colors:
+							set_color = m.group(1)
+				# Otherwise, use the User-Agent
+				else: 
+					browser_agent = h[11:].strip()
+					if browser_agent not in self.browsers:
+						self.browsers[browser_agent] = {
+							"id": len(self.browsers) + 1,
+							"agent": browser_agent,
+							"color": self.colors[len(self.browsers) % len(self.colors)]
+						}
+						self.stdout.println("Found new browser:")
+						self.stdout.println("  ID: " + str(self.browsers[browser_agent]["id"]))
+						self.stdout.println("  Agent: " + self.browsers[browser_agent]["agent"])
+						self.stdout.println("  Color: " + self.browsers[browser_agent]["color"])
+					set_color = self.browsers[browser_agent]["color"]
 
 		if not set_color is None:
 			message.getMessageInfo().setHighlight(set_color)
+		if not set_comment is None:
+			message.getMessageInfo().setComment(set_comment)
 
 	def createMenuItems(self, invocation):
 		if invocation.getInvocationContext() == invocation.CONTEXT_PROXY_HISTORY:
