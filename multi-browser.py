@@ -71,7 +71,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 			# If a comment header is defined just set the comment
 			elif x.startswith("comment:") or x.startswith("x-pentest-comment:"):
 				set_comment = x.split(":")[1].strip()
-			elif self.automagically and set_comment is None and x.startswith("user-agent:"):
+			elif set_comment is None and x.startswith("user-agent:"):
 				# Check for autochrome UA
 				if 'autochrome' in x:
 					m = re.search(r'autochrome/([a-z]+)', x)
@@ -93,6 +93,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 						self.stdout.println("  Color: " + self.browsers[browser_agent]["color"])
 					set_color = self.browsers[browser_agent]["color"]
 
+		print 111, set_color, set_comment
 		if not set_color is None:
 			message.getMessageInfo().setHighlight(set_color)
 		if not set_comment is None:
