@@ -93,7 +93,6 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 						self.stdout.println("  Color: " + self.browsers[browser_agent]["color"])
 					set_color = self.browsers[browser_agent]["color"]
 
-		print 111, set_color, set_comment
 		if not set_color is None:
 			message.getMessageInfo().setHighlight(set_color)
 		if not set_comment is None:
