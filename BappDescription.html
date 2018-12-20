@@ -1,6 +1,16 @@
-<p>This extension highlights the Proxy history to differentiate requests made by different browsers. The way this works is that each browser would be assigned one color and the highlights happen automatically.</p>
+<p>This extension highlights the Proxy history to differentiate requests made by different browsers. The plugin can highlight the requests automatically based on the User-Agent or specified by specific HTTP headers.</p>
 
-<p>During pentesting, I often have two or more different browsers opened to test issues such as role matrix, as well as to show how requests in 1 client might affect another. It is however hard to visualize which requests were made by which browser within the proxy histroy. Hence this plug-in was created to help visualize how different requests interleave with one another.</p>
+<p>During pentesting, I often have two or more different browsers opened to test issues such as role matrix, as well as to show how requests in one client might affect another. It is however hard to visualize which requests were made by which browser within the proxy histroy. Hence this plug-in was created to help visualize how different requests interleave with one another.</p>
+
+<p>When enabled, the plugin acts automatically by assigning a color per browser User-Agent (compatible with autochrome). You can also set the color and comment with the "X-Pentest" header by separating the color and comments with a semicolon (;). Available colors are: red, blue, pink, green, magenta, cyan, orange, gray, yellow</p>
+
+<p>Example:</p>
+<ul>
+  <li>X-Pentest: red</li>
+  <li>X-Pentest: blue; Admin</li>
+  <li>X-Pentest: ; Just a comment</li>
+  <li>X-Pentest-Color: yellow</li>
+  <li>X-Pentest-Comment: Just a comment</li>
+</ul>
 
 <p>It is designed to be non-intrusive, so highlighting is disabled by default. Turn it on in the Proxy context menu only when you need it.</p>
-
