@@ -28,7 +28,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 
 		self.callbacks.setExtensionName("Multi-Browser Highlighting")
 		self.enabled = False
-		self.automagically = False
+		self.automagically = True
 
 		self.stdout.println("Multi-Browser Highlighting is loaded")
 		if self.enabled:
@@ -71,7 +71,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 			# If a comment header is defined just set the comment
 			elif x.startswith("comment:") or x.startswith("x-pentest-comment:"):
 				set_comment = x.split(":")[1].strip()
-			elif set_comment is None and x.startswith("user-agent:"):
+			elif self.automagically and set_comment is None and x.startswith("user-agent:"):
 				# Check for autochrome UA
 				if 'autochrome' in x:
 					m = re.search(r'autochrome/([a-z]+)', x)
