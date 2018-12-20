@@ -58,7 +58,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 			if x.startswith("x-pentest:"):
 				if ";" in x:
 					color = x.split(":")[1].split(";")[0].strip()
-					set_comment = x.split(":")[1].split(";")[1].strip()
+					set_comment = h.split(":")[1].split(";")[1].strip()
 				else:
 					color = x.split(":")[1].strip()
 				if color in self.colors:
@@ -70,7 +70,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 					set_color = color
 			# If a comment header is defined just set the comment
 			elif x.startswith("comment:") or x.startswith("x-pentest-comment:"):
-				set_comment = x.split(":")[1].strip()
+				set_comment = h.split(":")[1].strip()
 			elif self.automagically and set_comment is None and x.startswith("user-agent:"):
 				# Check for autochrome UA
 				if 'autochrome' in x:
