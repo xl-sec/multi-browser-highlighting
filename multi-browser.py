@@ -8,7 +8,7 @@ from burp import IProxyListener
 from burp import IInterceptedProxyMessage
 from burp import IContextMenuFactory
 
-from javax.swing import JMenuItem
+from javax.swing import JMenu, JMenuItem
 from java.awt.event import ActionListener
 from java.io import PrintWriter
 import re
@@ -20,7 +20,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		self.helpers = callbacks.getHelpers()
 
 		self.stdout = PrintWriter(callbacks.getStdout(), True)
-		self.stderr = PrintWriter(callbacks.getStdout(), True)
+		self.stderr = PrintWriter(callbacks.getStderr(), True)
 
 		# Keep Track of Browsers
 		self.browsers = {}
@@ -30,7 +30,8 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 
 		self.callbacks.setExtensionName("Multi-Browser Highlighting")
 		self.enabled = False
-		self.automagically = True
+		self.header_enabled = True
+		self.useragent_enabled = True
 
 		self.stdout.println("Multi-Browser Highlighting is loaded")
 		if self.enabled:
@@ -58,7 +59,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		for h in headers:
 			x = h.lower()
 			# First check if we have the combined color and comment header
-			if x.startswith("x-pentest:"):
+			if self.header_enabled and x.startswith("x-pentest:"):
 				if ";" in x:
 					color = x.split(":")[1].split(";")[0].strip()
 					set_comment = ":".join(h.split(":")[1:]).split(";")[1].strip()
@@ -71,7 +72,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 				else:
 					self.stderr.println("Unsupported color " + color + " found, available colors: " + ", ".join(self.colors + self.aliases.keys()))
 			# If a color header is defined just set the color
-			elif x.startswith("color:") or x.startswith("x-pentest-color:"):
+			elif self.header_enabled and (x.startswith("color:") or x.startswith("x-pentest-color:")):
 				color = x.split(":")[1].strip()
 				if color in self.colors:
 					set_color = color
@@ -80,10 +81,10 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 				else:
 					self.stderr.println("Unsupported color " + color + " found, available colors: " + ", ".join(self.colors + self.aliases.keys()))
 			# If a comment header is defined just set the comment
-			elif x.startswith("comment:") or x.startswith("x-pentest-comment:"):
+			elif self.header_enabled and (x.startswith("comment:") or x.startswith("x-pentest-comment:")):
 				set_comment = ":".join(h.split(":")[1:]).strip()
-			elif self.automagically and set_comment is None and x.startswith("user-agent:"):
-				# Check for autochrome UA
+			elif self.useragent_enabled and set_comment is None and x.startswith("user-agent:"):
+				# Check for NCC autochrome UA
 				if 'autochrome' in x:
 					m = re.search(r'autochrome/([a-z]+)', x)
 					if m and m.group(1):
@@ -115,16 +116,22 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 
 	def createMenuItems(self, invocation):
 		if invocation.getInvocationContext() == invocation.CONTEXT_PROXY_HISTORY:
-			mymenu = []
 			if self.enabled:
-				item = JMenuItem("Multi-Browser Highlight (Running): Click to Disable ")
+				mymenu = JMenu("Multi-Browser Highlight (Running)")
+				mymenu.add(JMenuItem("Click to disable", None, actionPerformed=lambda x: self.flip('enabled')))
+				mymenu.add(JMenuItem("Base of HTTP headers: " + ("Enabled" if self.header_enabled else "Disabled"), None, actionPerformed=lambda x: self.flip('header_enabled')))
+				mymenu.add(JMenuItem("Base of User-Agent: " + ("Enabled" if self.useragent_enabled else "Disabled"), None, actionPerformed=lambda x: self.flip('useragent_enabled')))
 			else:
-				item = JMenuItem("Multi-Browser Highlight (Stopped): Click to Enable ")
-			item.addActionListener(self)
-			mymenu.append(item)
-			return mymenu
+				mymenu = JMenu("Multi-Browser Highlight (Stopped)")
+				mymenu.add(JMenuItem("Click to enable", None, actionPerformed=lambda x: self.flip('enabled')))
+			return [mymenu]
 		else:
 			return None
-	
-	def actionPerformed(self, actionEvent):
-		self.enabled = not self.enabled
+
+	def flip(self, to_flip):
+		if to_flip == 'enabled':
+			self.enabled = not self.enabled	
+		if to_flip == 'header_enabled':
+			self.header_enabled = not self.header_enabled
+		if to_flip == 'useragent_enabled':
+			self.useragent_enabled = not self.useragent_enabled
