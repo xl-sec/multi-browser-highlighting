@@ -20,11 +20,13 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		self.helpers = callbacks.getHelpers()
 
 		self.stdout = PrintWriter(callbacks.getStdout(), True)
+		self.stderr = PrintWriter(callbacks.getStdout(), True)
 
 		# Keep Track of Browsers
 		self.browsers = {}
 		# Colors for different browsers
 		self.colors = ["red", "blue", "pink", "green", "magenta", "cyan", "orange", "gray", "yellow"]
+		self.aliases = {"purple": "magenta", "grey": "gray"}
 
 		self.callbacks.setExtensionName("Multi-Browser Highlighting")
 		self.enabled = False
@@ -36,6 +38,7 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 		else:
 			self.stdout.println("Highlighting is stopped, use the context menu to enable")
 		self.stdout.println("Available colors: " + ", ".join(self.colors))
+		self.stdout.println("Available aliases: " + ", ".join(self.aliases.keys()))
 
 		#IExtensionHelpers helpers = callbacks.getHelpers()
 		callbacks.registerProxyListener(self)
@@ -63,11 +66,19 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 					color = x.split(":")[1].strip()
 				if color in self.colors:
 					set_color = color
+				elif color in self.aliases:
+					set_color = self.aliases[color]
+				else:
+					self.stderr.println("Unsupported color " + color + " found, available colors: " + ", ".join(self.colors + self.aliases.keys()))
 			# If a color header is defined just set the color
 			elif x.startswith("color:") or x.startswith("x-pentest-color:"):
 				color = x.split(":")[1].strip()
 				if color in self.colors:
 					set_color = color
+				elif color in self.aliases:
+					set_color = self.aliases[color]
+				else:
+					self.stderr.println("Unsupported color " + color + " found, available colors: " + ", ".join(self.colors + self.aliases.keys()))
 			# If a comment header is defined just set the comment
 			elif x.startswith("comment:") or x.startswith("x-pentest-comment:"):
 				set_comment = ":".join(h.split(":")[1:]).strip()
@@ -78,6 +89,10 @@ class BurpExtender(IBurpExtender,IProxyListener, IContextMenuFactory,ActionListe
 					if m and m.group(1):
 						if m.group(1) in self.colors:
 							set_color = m.group(1)
+						elif m.group(1) in self.aliases:
+							set_color = self.aliases[m.group(1)]
+						else:
+							self.stderr.println("Unsupported color " + m.group(1) + " found, available colors: " + ", ".join(self.colors + self.aliases.keys()))
 				# Otherwise, use the User-Agent
 				else: 
 					browser_agent = h[11:].strip()
